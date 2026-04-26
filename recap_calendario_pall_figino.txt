@@ -360,6 +360,7 @@ Prima di condividere il link con tutti:
 
 Miglioramenti utili:
 
+- tabella altezza fissa che scorre gli orari
 - versione mobile dedicata a lista eventi;
 - filtro per singolo giorno;
 - vista mensile;
