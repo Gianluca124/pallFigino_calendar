@@ -1,0 +1,400 @@
+RECAP PROGETTO CALENDARIO PALESTRE / SQUADRE
+
+1. Obiettivo del progetto
+
+Abbiamo realizzato una web app semplice e gratuita per gestire il calendario della società sportiva.
+
+La pagina permette di visualizzare e gestire:
+- allenamenti;
+- partite;
+- tornei;
+- trasferte;
+- eventi cancellati;
+- eventi comuni a tutte le squadre.
+
+Il progetto è stato pensato per essere economico, facile da pubblicare e gestibile senza server dedicato.
+
+
+2. Struttura generale
+
+La soluzione usa tre componenti principali:
+
+- GitHub Pages: pubblica online la pagina HTML.
+- Supabase: gestisce database, login utenti e permessi.
+- Un file index.html: contiene tutta l’interfaccia del calendario.
+
+La pagina pubblicata su GitHub Pages comunica direttamente con Supabase.
+
+
+3. Cosa abbiamo costruito
+
+Abbiamo costruito un calendario settimanale con:
+- giorni da lunedì a domenica;
+- slot orari da 09:30 a 23:00;
+- slot da 30 minuti;
+- colonne separate per le palestre;
+- colonna speciale per le trasferte;
+- colori diversi per squadra;
+- colore rosso per eventi cancellati;
+- legenda delle squadre;
+- esportazione in Excel;
+- login per utenti autorizzati;
+- consultazione libera per chi non effettua login.
+
+Il calendario è scrollabile orizzontalmente, quindi può essere usato anche su schermi piccoli, anche se la modifica da telefono può risultare scomoda.
+
+
+4. Tabelle create su Supabase
+
+Abbiamo previsto queste tabelle principali:
+
+- users
+- teams
+- gyms
+- events
+- event_changes
+
+La tabella users contiene solo gli utenti che devono avere permessi specifici.
+Gli utenti normali che aprono il link per consultare il calendario non devono essere creati nella tabella users.
+
+
+5. Gestione utenti
+
+Gli utenti anonimi possono consultare il calendario.
+
+Gli utenti che devono modificare devono essere creati in due punti:
+
+1. Supabase Authentication
+2. Tabella users
+
+Procedura per aggiungere un nuovo utente autorizzato:
+
+1. Vai su Supabase.
+2. Vai in Authentication > Users.
+3. Crea un nuovo utente con email e password.
+4. Copia l’UUID generato da Supabase.
+5. Vai nella tabella users.
+6. Crea una nuova riga usando lo stesso UUID.
+7. Imposta email, nome, cognome, ruolo applicativo e stato active.
+
+I ruoli applicativi usati sono:
+
+- ADMIN: può modificare.
+- EDITOR: può modificare.
+- VIEWER: solo consultazione.
+
+Per disattivare un utente, è sufficiente mettere active = false nella tabella users.
+Se si vuole bloccare completamente l’accesso, si può anche disabilitare o eliminare l’utente da Authentication.
+
+
+6. Gestione squadre
+
+Le squadre sono gestite nella tabella teams.
+
+Ogni squadra ha:
+- nome;
+- categoria;
+- stagione;
+- indicazione se appartiene alla stagione corrente;
+- eventuale allenatore;
+- eventuale dirigente.
+
+Nel calendario vengono mostrate solo le squadre con stagione corrente attiva.
+
+Per aggiungere una squadra:
+
+1. Vai in Supabase.
+2. Apri la tabella teams.
+3. Inserisci una nuova riga.
+4. Compila nome, categoria, stagione.
+5. Imposta is_current_season = true.
+
+Per non mostrare più una squadra, non serve cancellarla.
+Basta impostare is_current_season = false.
+
+
+7. Gestione palestre
+
+Le palestre sono gestite nella tabella gyms.
+
+Ogni palestra ha:
+- nome;
+- ordine di visualizzazione;
+- stato attivo/non attivo.
+
+Nel calendario vengono mostrate solo le palestre attive.
+
+Per aggiungere una palestra:
+
+1. Vai in Supabase.
+2. Apri la tabella gyms.
+3. Inserisci una nuova riga.
+4. Compila il nome.
+5. Imposta display_order.
+6. Imposta is_active = true.
+
+La colonna Trasferta è gestita come una palestra speciale.
+Deve esistere nella tabella gyms con nome esattamente uguale a:
+
+Trasferta
+
+Il nome deve restare scritto così perché viene usato dalla pagina per applicare la logica speciale delle trasferte.
+
+
+8. Gestione eventi
+
+Gli eventi sono salvati nella tabella events.
+
+Ogni evento può essere:
+- allenamento;
+- partita;
+- torneo.
+
+Ogni evento può essere:
+- confermato;
+- cancellato.
+
+La cancellazione è logica: l’evento non viene eliminato dal database, ma viene marcato come cancellato.
+In questo modo rimane visibile nel calendario, colorato in rosso, e resta traccia storica.
+
+Un evento può essere associato a una squadra specifica oppure essere comune a tutte le squadre.
+
+
+9. Logica delle trasferte
+
+La colonna Trasferta è speciale.
+
+Per le trasferte:
+- sono ammesse partite e tornei;
+- non sono ammessi allenamenti;
+- è obbligatorio indicare il luogo della trasferta;
+- sono ammesse sovrapposizioni tra squadre diverse;
+- sono bloccate sovrapposizioni della stessa squadra nello stesso orario.
+
+Se ci sono più trasferte sovrapposte nello stesso giorno, la colonna Trasferta si allarga dinamicamente.
+
+La larghezza normale resta uguale alle altre colonne.
+Quando ci sono sovrapposizioni, la colonna viene ampliata per rendere gli eventi leggibili.
+
+
+10. Logica dei tornei
+
+Per i tornei abbiamo impostato una durata automatica di tutta la giornata disponibile.
+
+Quando si seleziona TORNEO, l’orario viene impostato automaticamente da:
+
+09:30 a 23:00
+
+Questo vale sia per eventi in palestra sia per trasferte.
+
+
+11. Colori e grafica
+
+Abbiamo deciso di usare i colori per identificare le squadre, non il tipo evento.
+
+Regole grafiche attuali:
+
+- ogni squadra ha un colore diverso;
+- gli eventi cancellati sono rossi;
+- il testo del tipo evento è rosso per partite, tornei e trasferte;
+- il testo del tipo evento è nero per gli allenamenti;
+- tra un giorno e l’altro ci sono bordi più marcati;
+- le intestazioni delle colonne palestra hanno sfondi leggermente diversi;
+- la legenda mostra solo squadre e cancellato.
+
+I colori delle squadre sono assegnati automaticamente in base all’id della squadra.
+
+
+12. Storico modifiche
+
+Abbiamo previsto la tabella event_changes per registrare lo storico delle modifiche.
+
+Lo storico serve a sapere:
+- quando un evento è stato creato;
+- quando è stato modificato;
+- quali dati c’erano prima;
+- quali dati ci sono dopo.
+
+Dalla pagina, un utente autorizzato può aprire il dettaglio evento e vedere lo storico.
+
+Se lo storico non appare, bisogna controllare:
+- che la tabella event_changes sia popolata;
+- che i trigger o le policy Supabase siano corretti;
+- che l’utente abbia permesso di leggere lo storico.
+
+
+13. Pubblicazione
+
+Abbiamo pubblicato il progetto con GitHub Pages.
+
+Il flusso è:
+
+1. File index.html nel repository GitHub.
+2. GitHub Pages attivo sul branch main.
+3. Link pubblico generato da GitHub.
+4. Gli utenti aprono il link e consultano il calendario.
+
+Il sito è statico.
+Non serve un server backend.
+
+Quando si modifica index.html su GitHub, GitHub Pages aggiorna il sito dopo pochi minuti.
+
+
+14. Sicurezza
+
+Il file HTML contiene URL Supabase e anon key.
+
+Questo è normale nelle app frontend basate su Supabase.
+La sicurezza non dipende dal nascondere la anon key, ma dalle policy RLS di Supabase.
+
+Le policy devono garantire che:
+- gli utenti anonimi possano leggere solo ciò che devono consultare;
+- gli utenti anonimi non possano modificare dati;
+- solo ADMIN ed EDITOR possano creare o modificare eventi;
+- lo storico non possa essere manipolato liberamente;
+- la tabella users non esponga dati inutili.
+
+La regola fondamentale è:
+
+La pagina nasconde i pulsanti, ma Supabase deve bloccare davvero le operazioni non autorizzate.
+
+
+15. Come aggiornare il sito
+
+Per aggiornare il sito:
+
+1. Vai nel repository GitHub.
+2. Apri index.html.
+3. Clicca sulla matita per modificare.
+4. Incolla o modifica il codice.
+5. Fai Commit changes.
+6. Attendi qualche minuto.
+7. Riapri il link GitHub Pages.
+
+In alternativa, puoi modificare index.html sul PC e poi caricarlo nel repository.
+
+
+16. Cose automatiche
+
+Sono automatiche:
+
+- aggiunta di nuove squadre attive;
+- aggiunta di nuove palestre attive;
+- cambio ordine palestre tramite display_order;
+- lettura degli eventi da Supabase;
+- colori squadra;
+- legenda squadre;
+- larghezza dinamica della colonna Trasferta;
+- consultazione pubblica del calendario.
+
+
+17. Cose non automatiche
+
+Non sono automatiche:
+
+- aggiunta di nuovi tipi evento;
+- modifica delle regole di durata;
+- modifica delle regole sulle trasferte;
+- modifica della logica dei permessi;
+- modifica dei colori se si vogliono colori personalizzati per squadra;
+- creazione degli utenti autorizzati.
+
+Per aggiungere un nuovo tipo evento, per esempio RIUNIONE o AMICHEVOLE, bisogna intervenire sia su Supabase sia sul codice HTML.
+
+
+18. Operazioni manuali più frequenti
+
+Aggiungere un utente autorizzato:
+- creare utente in Authentication;
+- copiare UUID;
+- inserire riga nella tabella users;
+- assegnare ruolo ADMIN o EDITOR;
+- impostare active = true.
+
+Disattivare un utente:
+- impostare active = false nella tabella users.
+
+Aggiungere una squadra:
+- inserire riga in teams;
+- impostare is_current_season = true.
+
+Nascondere una squadra:
+- impostare is_current_season = false.
+
+Aggiungere una palestra:
+- inserire riga in gyms;
+- impostare display_order;
+- impostare is_active = true.
+
+Nascondere una palestra:
+- impostare is_active = false.
+
+Cancellare un evento:
+- modificare l’evento dalla pagina;
+- impostare stato = CANCELLATO.
+
+Cambiare un evento:
+- cliccare sull’evento;
+- aprire modifica;
+- salvare.
+
+
+19. Controlli consigliati prima di distribuire il link
+
+Prima di condividere il link con tutti:
+
+1. Aprire il sito in finestra anonima.
+2. Verificare che il calendario si carichi.
+3. Verificare che senza login non si possa modificare.
+4. Fare login come admin.
+5. Creare un evento di prova.
+6. Modificare l’evento di prova.
+7. Cancellare logicamente l’evento di prova.
+8. Controllare lo storico.
+9. Aprire da telefono.
+10. Verificare scroll orizzontale e apertura dettaglio evento.
+11. Controllare le policy RLS su Supabase.
+
+
+20. Possibili miglioramenti futuri
+
+Miglioramenti utili:
+
+- versione mobile dedicata a lista eventi;
+- filtro per singolo giorno;
+- vista mensile;
+- colori squadra salvati su database;
+- tabella event_types per gestire tipi evento dinamici;
+- importazione eventi da Excel;
+- esportazione PDF del calendario;
+- integrazione con Google Calendar;
+- notifiche o promemoria;
+- gestione ricorrenze;
+- dashboard amministrativa separata;
+- migliore gestione dei ruoli;
+- storico modifiche più leggibile;
+- pagina di login separata;
+- modalità sola lettura ottimizzata per smartphone;
+- backup periodico degli eventi;
+- gestione stagioni più avanzata;
+- possibilità di archiviare vecchie stagioni;
+- report numero eventi per squadra;
+- filtro per palestra;
+- filtro per trasferta;
+- possibilità di duplicare eventi;
+- gestione eventi ricorrenti settimanali.
+
+
+21. Stato attuale del progetto
+
+Il progetto è funzionante e pubblicato.
+
+La struttura attuale è adatta per un uso reale:
+- costo zero;
+- manutenzione semplice;
+- dati centralizzati su Supabase;
+- pubblicazione gratuita su GitHub Pages;
+- modifica consentita solo a utenti autorizzati;
+- consultazione possibile tramite link pubblico.
+
+La parte più delicata da mantenere sotto controllo sono le policy RLS di Supabase.
